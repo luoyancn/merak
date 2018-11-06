@@ -1,6 +1,7 @@
 package merak
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	neturl "net/url"
@@ -52,4 +53,41 @@ func Download(url string, proxy string) error {
 		return err
 	}
 	return nil
+}
+
+func request(method string, url string, headers map[string]string,
+	reqdata *string) (*http.Response, error) {
+	var reqbuf io.Reader
+
+	if nil != reqdata && "" != *reqdata {
+		reqbuf = bytes.NewBufferString(*reqdata)
+	} else {
+		reqbuf = nil
+	}
+
+	req, _ := http.NewRequest(strings.ToUpper(method), url, reqbuf)
+
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+
+	transport := &http.Transport{DisableKeepAlives: true}
+	client := &http.Client{Transport: transport}
+	return client.Do(req)
+}
+
+func Get(url string, headers map[string]string) (*http.Response, error) {
+	return request("GET", url, headers, nil)
+}
+
+func Put(url string, headers map[string]string, reqdata *string) (*http.Response, error) {
+	return request("PUT", url, headers, reqdata)
+}
+
+func Delete(url string, headers map[string]string) (*http.Response, error) {
+	return request("DELETE", url, headers, nil)
+}
+
+func Post(url string, headers map[string]string, reqdata *string) (*http.Response, error) {
+	return request("POST", url, headers, reqdata)
 }
